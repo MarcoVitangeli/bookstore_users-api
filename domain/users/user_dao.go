@@ -1,21 +1,18 @@
 package users
 
 import (
-	"fmt"
 	"github.com/MarcoVitangeli/bookstore_users-api/datasources/mysql/users_db"
 	"github.com/MarcoVitangeli/bookstore_users-api/utils/date"
 	"github.com/MarcoVitangeli/bookstore_users-api/utils/errors"
-	"strings"
+	"github.com/MarcoVitangeli/bookstore_users-api/utils/mysql"
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
-	queryGetUser    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id = ?;"
-	errorNoRows     = "no rows in result set"
-)
-
-var (
-	usersDB = make(map[int64]*User)
+	queryInsertUser      = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?, ?, ?, ?);"
+	queryGetUser         = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id = ?;"
+	queryUpdateUser      = "UPDATE users SET first_name=?, last_name=?, email=? WHERE id=?"
+	errorNoRows          = "no rows in result set"
+	MySqlDuplicateKeyErr = 1062
 )
 
 // only entry point for our database
@@ -29,15 +26,15 @@ func (user *User) Save() *errors.RestErr {
 	defer stmt.Close()
 
 	user.DateCreated = date.GetNowString()
-	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
+	insertResult, saveErr := stmt.Exec(user.FirstName, user.LastName, user.Email, user.DateCreated)
 
-	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error when trying to save user: %s", err.Error()))
+	if saveErr != nil {
+		return mysql.ParseError(saveErr)
 	}
 
 	userId, err := insertResult.LastInsertId()
 	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("error trying to save user: %s", err.Error()))
+		return mysql.ParseError(saveErr)
 	}
 
 	user.Id = userId
@@ -52,13 +49,26 @@ func (user *User) Get() *errors.RestErr {
 	}
 	defer stmt.Close()
 
-	res := stmt.QueryRow()
+	res := stmt.QueryRow(user.Id)
 
 	if err := res.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated); err != nil {
-		if strings.Contains(err.Error(), errorNoRows) {
-			return errors.NewNotFoundError(fmt.Sprintf("user %d not found", user.Id))
-		}
-		return errors.NewInternalServerError(fmt.Sprintf("Error when trying to get user %d", user.Id))
+		mysql.ParseError(err)
 	}
+	return nil
+}
+
+func (user *User) Update() *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryUpdateUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(user.FirstName, user.LastName, user.Email, user.Id)
+
+	if err != nil {
+		return mysql.ParseError(err)
+	}
+
 	return nil
 }
