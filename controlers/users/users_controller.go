@@ -75,3 +75,7 @@ func UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+func DeleteUser(c *gin.Context) {
+
+}

@@ -11,6 +11,7 @@ from the domain that this API belongs
 
 this is the core of our microservice
 */
+
 type User struct {
 	Id          int64  `json:"id"`
 	FirstName   string `json:"first_name"`
