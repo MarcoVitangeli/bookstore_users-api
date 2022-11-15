@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"github.com/MarcoVitangeli/bookstore_users-api/domain/users"
 	"github.com/MarcoVitangeli/bookstore_users-api/utils/errors"
 )
@@ -33,7 +32,6 @@ func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) 
 	}
 
 	if isPartial {
-		fmt.Println(user)
 		if user.FirstName != "" {
 			current.FirstName = user.FirstName
 		}
@@ -45,7 +43,6 @@ func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) 
 		if user.Email != "" {
 			current.Email = user.Email
 		}
-		fmt.Println(current)
 	} else {
 		current.FirstName = user.FirstName
 		current.LastName = user.LastName
