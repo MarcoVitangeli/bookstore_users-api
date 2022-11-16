@@ -18,6 +18,8 @@ type User struct {
 	LastName    string `json:"last_name"`
 	Email       string `json:"email"`
 	DateCreated string `json:"date_created"`
+    Status string `json:"status"`
+    Password string `json:"-"` // this means that we only use this as an internal field
 }
 
 // user should know if it is valid
